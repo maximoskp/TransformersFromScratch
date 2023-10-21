@@ -1,6 +1,6 @@
 # https://machinelearningmastery.com/how-to-implement-scaled-dot-product-attention-from-scratch-in-tensorflow-and-keras/
 
-from tensorflow import matmul, math, cast, float32
+from tensorflow import matmul, reshape, shape, transpose, math, cast, float32
 from tensorflow.keras.layers import Layer, Dense
 from keras.backend import softmax
 
@@ -38,3 +38,29 @@ class MultiHeadAttention(Layer):
         self.W_v = Dense(d_v) # learned value input weights
         self.W_o = Dense(d_model) # learned multi-head output weights
     # end init
+
+    def reshape_tensor(self, x, heads, flag):
+        if flag:
+            # spreading to all heads- (batch_size, heads, seq_length, -1)
+            x = reshape( x, shape=(shape(x)[0], shape(x)[1], heads, -1) )
+            x = transpose(x, perm=(0,2,1,3))
+        else:
+            # concatenate all heads together
+            x = transpose(x, perm=(0,2,1,3))
+            x = reshape(x, shape=(shape(x)[0], shape(x)[1], self.d_k))
+        return x
+    # end reshape_tensor
+
+    def call(self, queries, keys ,values, mask=None):
+        # reshape to prepare for multihead paralellization (batch_size, heads, seq_length, -1)
+        q_reshaped = self.reshape_tensor( self.W_q, self.heads, True )
+        k_reshaped = self.reshape_tensor( self.W_k, self.heads, True )
+        v_reshaped = self.reshape_tensor( self.W_v, self.heads, True )
+        # apply attention to all heads
+        o_reshaped = self.attention( q_reshaped, k_reshaped, v_reshaped, self.d_k, mask )
+        # rearrange to concatenated form
+        output = self.reshape_tensor(o_reshaped, self.heads, False)
+        # apply the final linear layer
+        return self.W_o(output)
+    # end call
+# end class MultiHeadAttention
