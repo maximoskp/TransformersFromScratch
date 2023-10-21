@@ -2,6 +2,9 @@
 Code from Machine Learning Mastery
 
 Attention:
+https://machinelearningmastery.com/how-to-implement-scaled-dot-product-attention-from-scratch-in-tensorflow-and-keras/
+
+Multihead attention
 https://machinelearningmastery.com/how-to-implement-multi-head-attention-from-scratch-in-tensorflow-and-keras/
 
 Encoder:
