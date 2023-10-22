@@ -26,6 +26,8 @@ class DotProductAttention(Layer):
     # end call
 # end class DotProductAttention
 
+# https://machinelearningmastery.com/how-to-implement-multi-head-attention-from-scratch-in-tensorflow-and-keras/
+
 class MultiHeadAttention(Layer):
     def __init__(self, h, d_k, d_v, d_model, **kwargs):
         super(MultiHeadAttention, self).__init__(**kwargs)
@@ -53,9 +55,9 @@ class MultiHeadAttention(Layer):
 
     def call(self, queries, keys ,values, mask=None):
         # reshape to prepare for multihead paralellization (batch_size, heads, seq_length, -1)
-        q_reshaped = self.reshape_tensor( self.W_q, self.heads, True )
-        k_reshaped = self.reshape_tensor( self.W_k, self.heads, True )
-        v_reshaped = self.reshape_tensor( self.W_v, self.heads, True )
+        q_reshaped = self.reshape_tensor( self.W_q(queries), self.heads, True )
+        k_reshaped = self.reshape_tensor( self.W_k(keys), self.heads, True )
+        v_reshaped = self.reshape_tensor( self.W_v(values), self.heads, True )
         # apply attention to all heads
         o_reshaped = self.attention( q_reshaped, k_reshaped, v_reshaped, self.d_k, mask )
         # rearrange to concatenated form

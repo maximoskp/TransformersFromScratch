@@ -14,8 +14,8 @@ keys = random.random( (batch_size, input_seq_length, d_k) )
 values = random.random( (batch_size, input_seq_length, d_k) )
 
 multihead = MultiHeadAttention(h, d_k, d_v, d_model)
-multihead.compile()
 
 output = multihead( queries, keys, values )
 
 print(output.shape)
+print(multihead.attention.attention_map.shape)

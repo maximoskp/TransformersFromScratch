@@ -12,3 +12,9 @@ https://machinelearningmastery.com/implementing-the-transformer-encoder-from-scr
 
 Decoder:
 https://machinelearningmastery.com/implementing-the-transformer-decoder-from-scratch-in-tensorflow-and-keras/
+
+Joining the Encoder and the Decoder
+https://machinelearningmastery.com/joining-the-transformer-encoder-and-decoder-and-masking/
+
+Training the transformer
+https://machinelearningmastery.com/training-the-transformer-model/
