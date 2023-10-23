@@ -4,7 +4,7 @@ from tensorflow.keras.layers import TextVectorization, Embedding, Layer
 from tensorflow.data import Dataset
 import numpy as np
 import matplotlib.pyplot as plt
-from transformer.transformer import PositionalEmbeddingFixedWeights
+from transformer.positional_encoding import PositionalEmbeddingFixedWeights
 
 output_sequence_length = 5
 vocab_size = 10
