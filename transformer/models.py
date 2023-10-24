@@ -30,7 +30,7 @@ class TransformerModel(Model):
         dec_in_lookahead_mask = self.lookahead_mask(decoder_input.shape[1])
         dec_in_lookahead_mask = maximum(dec_padding_mask, dec_in_lookahead_mask)
 
-        encoder_output = self.encoder(encoder_input)
+        encoder_output = self.encoder(encoder_input, enc_padding_mask, training)
         decoder_output = self.decoder(decoder_input, encoder_output, dec_in_lookahead_mask, enc_padding_mask, training)
 
         model_output = self.model_last_layer(decoder_output)
