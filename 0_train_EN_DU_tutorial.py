@@ -6,8 +6,8 @@ from keras.losses import sparse_categorical_crossentropy
 from transformer.models import TransformerModel
 from datatools.text import PrepareDataset
 from time import time
- 
- 
+import numpy as np
+
 # Define the model parameters
 h = 8  # Number of self-attention heads
 d_k = 64  # Dimensionality of the linearly projected queries and keys
@@ -15,7 +15,7 @@ d_v = 64  # Dimensionality of the linearly projected values
 d_model = 512  # Dimensionality of model layers' outputs
 d_ff = 2048  # Dimensionality of the inner fully connected layer
 n = 6  # Number of layers in the encoder stack
- 
+
 # Define the training parameters
 epochs = 2
 batch_size = 64
@@ -80,21 +80,29 @@ ckpt = train.Checkpoint(model=training_model, optimizer=optimizer)
 ckpt_manager = train.CheckpointManager(ckpt, "./checkpoints", max_to_keep=3)
 
 # speeding up the training process with eager execution of the training step
-@function
+# @function
 def train_step(encoder_input, decoder_input, decoder_output):
+    print('--'*20)
     with GradientTape() as tape:
         # run prediction
         prediction = training_model(encoder_input, decoder_input, training=True)
+        print('training_model.trainable_weights has nan 0:', np.isnan(training_model.trainable_weights[0]).any())
+        print('prediction has nan:', np.isnan(prediction).any())
         # compute loss and accuracy
         loss = loss_fcn(decoder_output, prediction)
+        print('loss has nan:', np.isnan(loss).any())
         accuracy = accuracy_fcn(decoder_output, prediction)
-        # get gradient
-        gradients = tape.gradient(loss, training_model.trainable_weights)
-        # update trainable parameters
-        optimizer.apply_gradients(zip(gradients, training_model.trainable_weights))
-        # update mean values
-        train_loss(loss)
-        train_accuracy(accuracy)
+    # get gradient
+    gradients = tape.gradient(loss, training_model.trainable_weights)
+    print('gradients has nan:', np.isnan(gradients[0]).any())
+    # print('gradients has nan:', math.is_nan(gradients).any())
+    # update trainable parameters
+    optimizer.apply_gradients(zip(gradients, training_model.trainable_weights))
+    # print('training_model.trainable_weights has nan 2:', type(training_model.trainable_weights[0]))
+    print('training_model.trainable_weights has nan 2:', np.isnan(training_model.trainable_weights[0]).any())
+    # update mean values
+    train_loss(loss)
+    train_accuracy(accuracy)
     # end context manager
 # end train_step
 
@@ -109,7 +117,7 @@ for epoch in range(epochs):
         decoder_input = train_batchY[:, :-1]
         decoder_output = train_batchY[:, 1:]
         train_step(encoder_input, decoder_input, decoder_output)
-        if step % 50 == 0:
+        if step % 2 == 0:
             print(f'Epoch {epoch + 1} Step {step} Loss {train_loss.result():.4f} Accuracy {train_accuracy.result():.4f}')
     # end for step
     print("Epoch %d: Training Loss %.4f, Training Accuracy %.4f" % (epoch + 1, train_loss.result(), train_accuracy.result()))

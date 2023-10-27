@@ -2,6 +2,7 @@ from tensorflow import math, cast, float32, linalg, ones, maximum, newaxis
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense
 from transformer.layers import Encoder, Decoder
+import numpy as np
 
 class TransformerModel(Model):
     def __init__(self, enc_vocab_size, dec_vocab_size, enc_seq_length, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, **kwargs):
@@ -32,8 +33,6 @@ class TransformerModel(Model):
 
         encoder_output = self.encoder(encoder_input, enc_padding_mask, training)
         decoder_output = self.decoder(decoder_input, encoder_output, dec_in_lookahead_mask, enc_padding_mask, training)
-
         model_output = self.model_last_layer(decoder_output)
-
         return model_output
     # end call
