@@ -1,7 +1,8 @@
 from pickle import load
 from numpy.random import shuffle
 from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
+# from keras.preprocessing.sequence import pad_sequences # produced error
+from keras.utils import pad_sequences # found on stack overflow
 from tensorflow import convert_to_tensor, int64
 
 class PrepareDataset:
