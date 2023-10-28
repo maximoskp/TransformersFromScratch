@@ -16,7 +16,7 @@ d_ff = 2048  # Dimensionality of the inner fully connected layer
 n = 6  # Number of layers in the encoder stack
 
 # Define the training parameters
-epochs = 2
+epochs = 30
 batch_size = 64
 beta_1 = 0.9
 beta_2 = 0.98
