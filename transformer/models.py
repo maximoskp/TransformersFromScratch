@@ -2,7 +2,6 @@ from tensorflow import math, cast, float32, linalg, ones, maximum, newaxis
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense
 from transformer.layers import Encoder, Decoder
-import numpy as np
 
 class TransformerModel(Model):
     def __init__(self, enc_vocab_size, dec_vocab_size, enc_seq_length, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, **kwargs):

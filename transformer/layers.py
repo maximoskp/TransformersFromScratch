@@ -2,7 +2,6 @@ from tensorflow.keras.layers import LayerNormalization, Layer, Dense, ReLU, Drop
 from transformer.attention import MultiHeadAttention
 from transformer.positional_encoding import PositionalEmbeddingFixedWeights
 from tensorflow.keras import Model
-import numpy as np
 
 class AddNormalization(Layer):
     def __init__(self, **kwargs):

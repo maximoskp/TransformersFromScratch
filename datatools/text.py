@@ -7,7 +7,7 @@ from tensorflow import convert_to_tensor, int64
 class PrepareDataset:
     def __init__(self,**kwargs):
         super(PrepareDataset, self).__init__(**kwargs)
-        self.n_sentences = 1000
+        self.n_sentences = 10000
         self.train_split = 0.9
     # end init
 
