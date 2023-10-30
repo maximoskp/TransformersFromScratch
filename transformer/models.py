@@ -40,6 +40,7 @@ class TransformerModel(Model):
 class EncoderModel(Model):
     def __init__(self, enc_vocab_size, enc_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, **kwargs):
         super(EncoderModel, self).__init__(**kwargs)
+        self.enc_seq_length = enc_seq_length # necessary for MLMEncoderModel
         self.encoder = Encoder(enc_vocab_size, enc_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate)
     # end init
 
@@ -108,3 +109,16 @@ class TransformerEncDecModel(Model):
         return model_output
     # end call
 # end class TransformerEncDecModel
+
+class MLMEncoderWrapper(Model):
+    def __init__(self, encoder_model, **kwargs):
+        super(MLMEncoderWrapper, self).__init__(**kwargs)
+        self.encoder_model = encoder_model
+        self.output_layer = Dense(encoder_model.enc_seq_length)
+    # end init
+
+    def call(self, encoder_input, training):
+        x = self.encoder_model( encoder_input, training )
+        return self.output_layer( x )
+    # end 
+# end class MLMEncoderWrapper
