@@ -59,16 +59,21 @@ class MLMWikipediaDataset:
         # ['wikitext-103-v1', 'wikitext-2-v1', 'wikitext-103-raw-v1', 'wikitext-2-raw-v1']
         wikitext = load_dataset('wikitext', 'wikitext-103-raw-v1')
         texts = np.array(wikitext['train']['text'])
-        large_sentences = np.array([ s for s in texts if len(s) > 5 and '=' not in s])
+        large_sentences = []
+        tmp_idx = 0
+        while len(large_sentences) < self.n_sentences and tmp_idx < len(texts):
+            s = texts[tmp_idx]
+            tmp_idx += 1
+            if len(s) > 5 and '=' not in s:
+                large_sentences.append( s )
         clean_dataset = np.array([s.lower() + '.' for l in large_sentences for s in l.split('.')])
         # create tokenizer
-        self.create_tokenizer( list(clean_dataset[:self.n_sentences]) )
+        self.create_tokenizer( list(clean_dataset) )
         dataset = np.array(self.tokenizer_results['input_ids'])
         # shuffle and get training data
         shuffle(dataset) # no return
         train = dataset[:int(self.n_sentences * self.train_split)]
         # Prepare tokenizer for the encoder input
-        enc_tokenizer = self.create_tokenizer(train)
         enc_seq_length = self.max_sentence_length
         enc_vocab_size = self.tokenizer.vocab_size
         trainX, trainY, mask_weights = self.get_masked_input_and_labels(train)
