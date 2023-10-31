@@ -11,7 +11,7 @@ import numpy as np
 class MLMWikipediaDataset:
     def __init__(self,**kwargs):
         super(MLMWikipediaDataset, self).__init__(**kwargs)
-        self.n_sentences = 100
+        self.n_sentences = 10000
         self.train_split = 0.9
         self.max_sentence_length = 300
     # end init

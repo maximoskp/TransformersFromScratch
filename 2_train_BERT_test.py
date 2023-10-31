@@ -2,7 +2,7 @@ from tensorflow.keras.optimizers.legacy import Adam # faster on M1 macs?
 # from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers.schedules import LearningRateSchedule
 from tensorflow.keras.metrics import Mean
-from tensorflow import data, train, math, reduce_sum, cast, equal, argmax, float32, GradientTape, TensorSpec, function, int64, sqrt
+from tensorflow import data, train, math, reduce_sum, cast, equal, argmax, float32, bool, GradientTape, TensorSpec, function, int64, sqrt
 from keras.losses import sparse_categorical_crossentropy
 from transformer.models import MLMEncoderWrapper, EncoderModel
 from datatools.mlm_pretraining import MLMWikipediaDataset
@@ -52,15 +52,22 @@ optimizer = Adam( LRScheduler(d_model), beta_1, beta_2, epsilon )
 encoder = EncoderModel(enc_vocab_size, enc_seq_length, h, d_k, d_v, d_model, d_ff, n, dropout_rate)
 training_model = MLMEncoderWrapper(encoder)
 
+# for step, (train_batchX, train_batchY, weights_batch) in enumerate(train_dataset):
+#     print('train_batchX.shape', train_batchX.shape)
+#     print('train_batchY.shape', train_batchY.shape)
+#     print('weights_batch.shape', weights_batch.shape)
+#     prediction = training_model(train_batchX, training=True)
+#     print('prediction.shape', prediction.shape)
+
 def loss_fcn(model_output, unmasked_output, mask_weights):
-    loss = sparse_categorical_crossentropy(model_output, unmasked_output, from_logits=True)*mask_weights
+    loss = sparse_categorical_crossentropy(unmasked_output, model_output, from_logits=False)*mask_weights
     return reduce_sum(loss)/reduce_sum(mask_weights)
 # end loss_fcn
 
 def accuracy_fcn(model_output, unmasked_output, mask_weights):
     # find equals and apply mask
-    accuracy = equal(model_output, argmax(unmasked_output, axis=2))
-    accuracy = math.logical_and(mask_weights, accuracy)
+    accuracy = equal(unmasked_output, argmax(model_output, axis=2))
+    accuracy = math.logical_and( cast(mask_weights, bool), accuracy)
     # cast results to 32bit floats
     accuracy = cast(accuracy, float32)
     # compute accuracy on masked values

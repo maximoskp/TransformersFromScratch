@@ -1,6 +1,6 @@
 from tensorflow import math, cast, float32, linalg, ones, maximum, newaxis
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Softmax
 from transformer.layers import Encoder, Decoder
 
 class TransformerModel(Model):
@@ -40,7 +40,7 @@ class TransformerModel(Model):
 class EncoderModel(Model):
     def __init__(self, enc_vocab_size, enc_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, **kwargs):
         super(EncoderModel, self).__init__(**kwargs)
-        self.enc_seq_length = enc_seq_length # necessary for MLMEncoderModel
+        self.vocab_size = enc_vocab_size # necessary for MLMEncoderModel
         self.encoder = Encoder(enc_vocab_size, enc_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate)
     # end init
 
@@ -114,11 +114,12 @@ class MLMEncoderWrapper(Model):
     def __init__(self, encoder_model, **kwargs):
         super(MLMEncoderWrapper, self).__init__(**kwargs)
         self.encoder_model = encoder_model
-        self.output_layer = Dense(encoder_model.enc_seq_length)
+        self.output_layer = Dense(encoder_model.vocab_size)
+        self.softmax_layer = Softmax()
     # end init
 
     def call(self, encoder_input, training):
         x = self.encoder_model( encoder_input, training )
-        return self.output_layer( x )
-    # end 
+        return self.softmax_layer(self.output_layer( x ))
+    # end call
 # end class MLMEncoderWrapper
