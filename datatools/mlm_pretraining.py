@@ -58,7 +58,7 @@ class MLMWikipediaDataset:
     def __call__(self, **kwargs):
         # ['wikitext-103-v1', 'wikitext-2-v1', 'wikitext-103-raw-v1', 'wikitext-2-raw-v1']
         wikitext = load_dataset('wikitext', 'wikitext-103-raw-v1')
-        texts = np.array(wikitext['train']['text'])
+        texts = np.array(wikitext['train']['text'][:2*self.n_sentences])
         large_sentences = []
         tmp_idx = 0
         while len(large_sentences) < self.n_sentences and tmp_idx < len(texts):

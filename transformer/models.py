@@ -115,11 +115,12 @@ class MLMEncoderWrapper(Model):
         super(MLMEncoderWrapper, self).__init__(**kwargs)
         self.encoder_model = encoder_model
         self.output_layer = Dense(encoder_model.vocab_size)
-        self.softmax_layer = Softmax()
+        # self.softmax_layer = Softmax()
     # end init
 
     def call(self, encoder_input, training):
         x = self.encoder_model( encoder_input, training )
-        return self.softmax_layer(self.output_layer( x ))
+        # return self.softmax_layer(self.output_layer( x ))
+        return self.output_layer( x )
     # end call
 # end class MLMEncoderWrapper

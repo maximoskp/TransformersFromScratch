@@ -60,7 +60,7 @@ training_model = MLMEncoderWrapper(encoder)
 #     print('prediction.shape', prediction.shape)
 
 def loss_fcn(model_output, unmasked_output, mask_weights):
-    loss = sparse_categorical_crossentropy(unmasked_output, model_output, from_logits=False)*mask_weights
+    loss = sparse_categorical_crossentropy(unmasked_output, model_output, from_logits=True)*mask_weights
     return reduce_sum(loss)/reduce_sum(mask_weights)
 # end loss_fcn
 
