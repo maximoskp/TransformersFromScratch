@@ -1,4 +1,4 @@
-from tensorflow import math, cast, float32, linalg, ones, maximum, newaxis
+from tensorflow import math, cast, float32, linalg, ones, maximum, newaxis, shape
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Softmax
 from transformer.layers import Encoder, Decoder
@@ -124,3 +124,21 @@ class MLMEncoderWrapper(Model):
         return self.output_layer( x )
     # end call
 # end class MLMEncoderWrapper
+
+class GPTDecoderWrapper(Model):
+    def __init__(self, decoder_model, **kwargs):
+        super(GPTDecoderWrapper, self).__init__(**kwargs)
+        self.decoder_model = decoder_model
+    # end init
+
+    def call(self, decoder_input, training):
+        # TODO: encoder_input and enc_padding_mask need to be all ones
+        # It is assumed that the encoder output is the shape of the decoder input.
+        # To achieve that, the connecting architecture needs to have an additional
+        # dense layer that reshapes the connecting encoder output to the desired
+        # input of the decoder.
+        encoder_output_and_padding = ones( shape(decoder_input) )
+        model_output = self.decoder_model(decoder_input, encoder_output_and_padding, encoder_output_and_padding, training)
+        return model_output
+    # end call
+# end class GPTDecoderWrapper
