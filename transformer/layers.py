@@ -99,13 +99,13 @@ class DecoderLayer(Layer):
 
     def call(self, x, encoder_output, lookahead_mask, padding_mask, training):
         multihead_output1 = self.multihead_attention1(x, x, x, lookahead_mask) # (batch_size, seq_length, d_model)
-        multihead_output1 = self.dropout1(multihead_output1)
+        multihead_output1 = self.dropout1(multihead_output1, training=training)
         addnorm_output1 = self.add_norm1(x, multihead_output1)
         multihead_output2 = self.multihead_attention2(addnorm_output1, encoder_output, encoder_output, padding_mask)
-        multihead_output2 = self.dropout2(multihead_output2)
+        multihead_output2 = self.dropout2(multihead_output2, training=training)
         addnorm_output2 = self.add_norm2(addnorm_output1, multihead_output2)
         feedforward_output = self.feed_forward(addnorm_output2)
-        feedforward_output = self.dropout3(feedforward_output)
+        feedforward_output = self.dropout3(feedforward_output, training=training)
         return self.add_norm3(addnorm_output2, feedforward_output)
     # end call
 # end class DecoderLayer
