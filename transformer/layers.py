@@ -135,7 +135,7 @@ class LockingDecoderLayer(Layer):
         self.build(input_shape=[None, sequence_length, d_model])
         self.d_model = d_model
         self.sequence_length = sequence_length
-        self.multihead_attention1 = LockingMultiHeadAttention(h, d_k, d_v, d_model)
+        self.multihead_attention1 = MultiHeadAttention(h, d_k, d_v, d_model)
         self.dropout1 = Dropout(rate)
         self.add_norm1 = AddNormalization()
         self.multihead_attention2 = LockingMultiHeadAttention(h, d_k, d_v, d_model)
@@ -151,11 +151,11 @@ class LockingDecoderLayer(Layer):
         return Model(inputs=[input_layer], outputs=self.call(input_layer, None, True))
     # end build_graph
 
-    def call(self, x, encoder_output, lookahead_mask, padding_mask, training):
+    def call(self, x, encoder_output, lookahead_mask, padding_mask, training, lock=False):
         multihead_output1 = self.multihead_attention1(x, x, x, lookahead_mask) # (batch_size, seq_length, d_model)
         multihead_output1 = self.dropout1(multihead_output1, training=training)
         addnorm_output1 = self.add_norm1(x, multihead_output1)
-        multihead_output2 = self.multihead_attention2(addnorm_output1, encoder_output, encoder_output, padding_mask)
+        multihead_output2 = self.multihead_attention2(addnorm_output1, encoder_output, encoder_output, padding_mask, lock)
         multihead_output2 = self.dropout2(multihead_output2, training=training)
         addnorm_output2 = self.add_norm2(addnorm_output1, multihead_output2)
         feedforward_output = self.feed_forward(addnorm_output2)
@@ -172,11 +172,11 @@ class LockingDecoder(Layer):
         self.decoder_layer = [LockingDecoderLayer(sequence_length, h, d_k, d_v, d_model, d_ff, rate) for _ in range(n)]
     # end init
 
-    def call(self, output_target, encoder_output, lookahead_mask, padding_mask, training):
+    def call(self, output_target, encoder_output, lookahead_mask, padding_mask, training, lock=False):
         pos_encoding_output = self.pos_encoding(output_target) # (num_sentences, seq_length, d_model)
         x = self.dropout(pos_encoding_output, training=training)
         for i, layer in enumerate(self.decoder_layer):
-            x = layer(x, encoder_output, lookahead_mask, padding_mask, training)
+            x = layer(x, encoder_output, lookahead_mask, padding_mask, training, lock)
         return x
     # end call
 # end class LockingDecoder

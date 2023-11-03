@@ -132,7 +132,6 @@ class GPTDecoderWrapper(Model):
     # end init
 
     def call(self, decoder_input, training):
-        # TODO: encoder_input and enc_padding_mask need to be all ones
         # It is assumed that the encoder output is the shape of the decoder input.
         # To achieve that, the connecting architecture needs to have an additional
         # dense layer that reshapes the connecting encoder output to the desired
