@@ -2,7 +2,7 @@ from tensorflow.keras.optimizers.legacy import Adam # faster on M1 macs?
 # from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers.schedules import LearningRateSchedule
 from tensorflow.keras.metrics import Mean
-from tensorflow import data, train, math, reduce_sum, cast, equal, argmax, float32, bool, int32, GradientTape, TensorSpec, function, int64, sqrt
+from tensorflow import data, train, math, reduce_sum, cast, equal, argmax, float32, bool, int32, int64, GradientTape, TensorSpec, function, int64, sqrt
 from keras.losses import sparse_categorical_crossentropy
 from transformer.models import GPTDecoderWrapper, LockingDecoderModel
 from datatools.text_pretraining import GPTWikipediaDataset
@@ -61,22 +61,24 @@ training_model = GPTDecoderWrapper(decoder)
 
 def loss_fcn(model_output, true_output, padding_token):
     # padded values not included in loss computation
-    padding_mask = math.logical_not( equal(model_output, padding_token) )
+    padding_mask = math.logical_not( equal(true_output, padding_token) )
     padding_mask = cast(padding_mask, float32)
     loss = sparse_categorical_crossentropy(true_output, model_output, from_logits=True)*padding_mask
-    return reduce_sum(loss)/reduce_sum(mask_weights)
+    return reduce_sum(loss)/reduce_sum(padding_mask)
 # end loss_fcn
 
 def accuracy_fcn(model_output, true_output, padding_token):
     # padded values not included in loss computation
-    padding_mask = math.logical_not( equal(model_output, padding_token) )
+    padding_mask = math.logical_not( equal(true_output, padding_token) )
     # find equals and apply mask
-    accuracy = equal(true_output, cast(argmax(model_output, axis=2), int32))
+    accuracy = equal(true_output, cast(argmax(model_output, axis=2), int64))
     accuracy = math.logical_and(padding_mask, accuracy)
+    # cast results to 32bit floats
+    padding_mask = cast(padding_mask, float32)
     # cast results to 32bit floats
     accuracy = cast(accuracy, float32)
     # compute accuracy on masked values
-    return reduce_sum(accuracy)/reduce_sum(mask_weights)
+    return reduce_sum(accuracy)/reduce_sum(padding_mask)
 # end accuracy_fcn
 
 # include metrics monitoring

@@ -2,7 +2,7 @@ from tensorflow.keras.optimizers.legacy import Adam # faster on M1 macs?
 # from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers.schedules import LearningRateSchedule
 from tensorflow.keras.metrics import Mean
-from tensorflow import data, train, math, reduce_sum, cast, equal, argmax, float32, bool, int32, GradientTape, TensorSpec, function, int64, sqrt
+from tensorflow import data, train, math, reduce_sum, cast, equal, argmax, float32, bool, int32, int64, GradientTape, TensorSpec, function, int64, sqrt
 from keras.losses import sparse_categorical_crossentropy
 from transformer.models import MLMEncoderWrapper, EncoderModel
 from datatools.text_pretraining import MLMWikipediaDataset
@@ -66,7 +66,7 @@ def loss_fcn(model_output, unmasked_output, mask_weights):
 
 def accuracy_fcn(model_output, unmasked_output, mask_weights):
     # find equals and apply mask
-    accuracy = equal(unmasked_output, cast(argmax(model_output, axis=2), int32))
+    accuracy = equal(unmasked_output, cast(argmax(model_output, axis=2), int64))
     accuracy = math.logical_and( cast(mask_weights, bool), accuracy)
     # cast results to 32bit floats
     accuracy = cast(accuracy, float32)
