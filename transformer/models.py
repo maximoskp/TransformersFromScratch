@@ -1,7 +1,11 @@
 from tensorflow import math, cast, float32, linalg, ones, maximum, newaxis, shape
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Softmax
-from transformer.layers import Encoder, Decoder
+from transformer.layers import Encoder, Decoder, LockingDecoder
+
+# TODO: check if it makes sense to create an abstract EncoderDecoderSuperclass
+# that holds the implementations of both padding and lookahead masks.
+# Subclasses can make use of any of those
 
 class TransformerModel(Model):
     def __init__(self, enc_vocab_size, dec_vocab_size, enc_seq_length, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, **kwargs):
@@ -125,19 +129,53 @@ class MLMEncoderWrapper(Model):
     # end call
 # end class MLMEncoderWrapper
 
+class LockingDecoderModel(Model):
+    def __init__(self, dec_vocab_size, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate, **kwargs):
+        super(LockingDecoderModel, self).__init__(**kwargs)
+        self.decoder = LockingDecoder(dec_vocab_size, dec_seq_length, h, d_k, d_v, d_model, d_ff_inner, n, rate)
+        self.model_last_layer = Dense(dec_vocab_size)
+    # end init
+
+    def padding_mask(self, input):
+        mask = math.equal(input, 0)
+        mask = cast(mask, float32)
+        # shape needs to match attention maps
+        return mask[:, newaxis, newaxis, :]
+    # end padding_mask
+
+    def lookahead_mask(self, shape):
+        mask = 1 - linalg.band_part(ones((shape, shape)), -1, 0)
+        return mask
+    # end lookahead_mask
+
+    def call(self, decoder_input, encoder_output, enc_padding_mask, training, lock):
+        # if no encoder input is provided, encoder_output and enc_padding_mask should be set to trivial values
+        dec_padding_mask = self.padding_mask(decoder_input)
+        dec_in_lookahead_mask = self.lookahead_mask(decoder_input.shape[1])
+        dec_in_lookahead_mask = maximum(dec_padding_mask, dec_in_lookahead_mask)
+
+        decoder_output = self.decoder(decoder_input, encoder_output, dec_in_lookahead_mask, enc_padding_mask, training, lock)
+        model_output = self.model_last_layer(decoder_output)
+        return model_output
+    # end call
+# end class LockingDecoderModel
+
 class GPTDecoderWrapper(Model):
     def __init__(self, decoder_model, **kwargs):
         super(GPTDecoderWrapper, self).__init__(**kwargs)
-        self.decoder_model = decoder_model
+        self.decoder_model = decoder_model # assumed LockingDecoderModel class
     # end init
 
-    def call(self, decoder_input, training):
+    def call(self, decoder_input, encoder_output, enc_padding_mask, training, lock):
         # It is assumed that the encoder output is the shape of the decoder input.
         # To achieve that, the connecting architecture needs to have an additional
         # dense layer that reshapes the connecting encoder output to the desired
         # input of the decoder.
-        encoder_output_and_padding = ones( shape(decoder_input) )
-        model_output = self.decoder_model(decoder_input, encoder_output_and_padding, encoder_output_and_padding, training)
+        if lock:
+            encoder_output_and_padding = ones( shape(decoder_input) )
+            model_output = self.decoder_model(decoder_input, encoder_output_and_padding, encoder_output_and_padding, training, lock)
+        else:
+            model_output = self.decoder_model(decoder_input, encoder_output, enc_padding_mask, training, lock)
         return model_output
     # end call
 # end class GPTDecoderWrapper

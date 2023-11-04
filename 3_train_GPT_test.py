@@ -4,8 +4,8 @@ from tensorflow.keras.optimizers.schedules import LearningRateSchedule
 from tensorflow.keras.metrics import Mean
 from tensorflow import data, train, math, reduce_sum, cast, equal, argmax, float32, bool, int32, GradientTape, TensorSpec, function, int64, sqrt
 from keras.losses import sparse_categorical_crossentropy
-from transformer.models import MLMEncoderWrapper, EncoderModel
-from datatools.text_pretraining import MLMWikipediaDataset
+from transformer.models import GPTDecoderWrapper, LockingDecoderModel
+from datatools.text_pretraining import GPTWikipediaDataset
 from time import time
 
 # Define the model parameters
@@ -25,10 +25,10 @@ epsilon = 1e-9
 dropout_rate = 0.1
 
 # prepare data
-mlmWikipediaDataset = MLMWikipediaDataset()
-trainX, trainY, mask_weights, train_orig, enc_seq_length, enc_vocab_size = mlmWikipediaDataset()
+gptWikipediaDataset = GPTWikipediaDataset()
+trainX, trainY, dec_seq_length, dec_vocab_size, padding_token = gptWikipediaDataset()
 
-train_dataset = data.Dataset.from_tensor_slices((trainX, trainY, mask_weights))
+train_dataset = data.Dataset.from_tensor_slices((trainX, trainY))
 train_dataset = train_dataset.batch(batch_size)
 
 class LRScheduler(LearningRateSchedule):
@@ -49,8 +49,8 @@ class LRScheduler(LearningRateSchedule):
 optimizer = Adam( LRScheduler(d_model), beta_1, beta_2, epsilon )
 
 # Create models
-encoder = EncoderModel(enc_vocab_size, enc_seq_length, h, d_k, d_v, d_model, d_ff, n, dropout_rate)
-training_model = MLMEncoderWrapper(encoder)
+decoder = LockingDecoderModel(dec_vocab_size, dec_seq_length, h, d_k, d_v, d_model, d_ff, n, dropout_rate)
+training_model = GPTDecoderWrapper(decoder)
 
 # for step, (train_batchX, train_batchY, weights_batch) in enumerate(train_dataset):
 #     print('train_batchX.shape', train_batchX.shape)
@@ -59,15 +59,20 @@ training_model = MLMEncoderWrapper(encoder)
 #     prediction = training_model(train_batchX, training=True)
 #     print('prediction.shape', prediction.shape)
 
-def loss_fcn(model_output, unmasked_output, mask_weights):
-    loss = sparse_categorical_crossentropy(unmasked_output, model_output, from_logits=True)*mask_weights
+def loss_fcn(model_output, true_output, padding_token):
+    # padded values not included in loss computation
+    padding_mask = math.logical_not( equal(model_output, padding_token) )
+    padding_mask = cast(padding_mask, float32)
+    loss = sparse_categorical_crossentropy(true_output, model_output, from_logits=True)*padding_mask
     return reduce_sum(loss)/reduce_sum(mask_weights)
 # end loss_fcn
 
-def accuracy_fcn(model_output, unmasked_output, mask_weights):
+def accuracy_fcn(model_output, true_output, padding_token):
+    # padded values not included in loss computation
+    padding_mask = math.logical_not( equal(model_output, padding_token) )
     # find equals and apply mask
-    accuracy = equal(unmasked_output, cast(argmax(model_output, axis=2), int32))
-    accuracy = math.logical_and( cast(mask_weights, bool), accuracy)
+    accuracy = equal(true_output, cast(argmax(model_output, axis=2), int32))
+    accuracy = math.logical_and(padding_mask, accuracy)
     # cast results to 32bit floats
     accuracy = cast(accuracy, float32)
     # compute accuracy on masked values
@@ -84,13 +89,13 @@ ckpt_manager = train.CheckpointManager(ckpt, "./checkpoints", max_to_keep=3)
 
 # speeding up the training process with eager execution of the training step
 @function
-def train_step(masked_input, unmasked_output, mask_weights):
+def train_step(train_X, train_Y, padding_token):
     with GradientTape() as tape:
         # run prediction
-        prediction = training_model(masked_input, training=True)
+        prediction = training_model(train_X, None, None, training=True, lock=True)
         # compute loss and accuracy
-        loss = loss_fcn(prediction, unmasked_output, mask_weights)
-        accuracy = accuracy_fcn(prediction, unmasked_output, mask_weights)
+        loss = loss_fcn(prediction, train_Y, padding_token)
+        accuracy = accuracy_fcn(prediction, train_Y, padding_token)
     # get gradient
     gradients = tape.gradient(loss, training_model.trainable_weights)
     # update trainable parameters
@@ -106,10 +111,10 @@ for epoch in range(epochs):
     train_accuracy.reset_states()
     print("\nStart of epoch %d" % (epoch + 1))
     start_time = time()
-    for step, (train_batchX, train_batchY, weights_batch) in enumerate(train_dataset):
+    for step, (train_batchX, train_batchY) in enumerate(train_dataset):
         # define encoder/decoder inputs/outputs
-        masked_input, unmasked_output, mask_weights = train_batchX, train_batchY, weights_batch
-        train_step(masked_input, unmasked_output, mask_weights)
+        masked_input, unmasked_output = train_batchX, train_batchY
+        train_step(masked_input, unmasked_output, padding_token)
         if step % 10 == 0:
             print(f'Epoch {epoch + 1} Step {step} Loss {train_loss.result():.4f} Accuracy {train_accuracy.result():.4f}')
     # end for step

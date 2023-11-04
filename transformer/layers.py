@@ -166,7 +166,7 @@ class LockingDecoderLayer(Layer):
 
 class LockingDecoder(Layer):
     def __init__(self, vocab_size, sequence_length, h, d_k, d_v, d_model, d_ff, n, rate, **kwargs):
-        super(Decoder, self).__init__(**kwargs)
+        super(LockingDecoder, self).__init__(**kwargs)
         self.pos_encoding = PositionalEmbeddingFixedWeights(sequence_length, vocab_size, d_model)
         self.dropout = Dropout(rate)
         self.decoder_layer = [LockingDecoderLayer(sequence_length, h, d_k, d_v, d_model, d_ff, rate) for _ in range(n)]
