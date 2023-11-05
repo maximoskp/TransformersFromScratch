@@ -10,14 +10,18 @@ from numpy.random import shuffle
 from tensorflow import convert_to_tensor, int64
 import numpy as np
 
-# TODO: create a WikipediaDataset super class that loads the wikitext dataset
+# TODO: 
+# 1. Create a WikipediaDataset super class that loads the wikitext dataset
 # during initialization. This class could include the create_tokenizer
-# function and get the type of the tokenizer as input, e.g BertTokenizer
+# function and get the type of the tokenizer as input, e.g BertTokenizer.
+# 
+# 2. Create a generator that feeds data randomly from the entire wikitext 
+# dataset. The generator should be able to prepare data for each batch.
 
 class MLMWikipediaDataset:
     def __init__(self,**kwargs):
         super(MLMWikipediaDataset, self).__init__(**kwargs)
-        self.n_sentences = 10000
+        self.n_sentences = 100
         self.train_split = 0.9
         self.max_sentence_length = 50
     # end init
@@ -91,7 +95,7 @@ class MLMWikipediaDataset:
 class GPTWikipediaDataset:
     def __init__(self,**kwargs):
         super(GPTWikipediaDataset, self).__init__(**kwargs)
-        self.n_sentences = 10000
+        self.n_sentences = 100
         self.train_split = 0.9
         self.max_sentence_length = 50
     # end init

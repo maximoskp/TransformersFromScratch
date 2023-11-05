@@ -2,6 +2,7 @@ from tensorflow.keras.layers import LayerNormalization, Layer, Dense, ReLU, Drop
 from transformer.attention import MultiHeadAttention, LockingMultiHeadAttention
 from transformer.positional_encoding import PositionalEmbeddingFixedWeights
 from tensorflow.keras import Model
+from tensorflow.math import is_nan, reduce_any
 
 class AddNormalization(Layer):
     def __init__(self, **kwargs):
@@ -150,9 +151,12 @@ class LockingDecoderLayer(Layer):
         input_layer = Input(shape=(self.sequence_length, self.d_model))
         return Model(inputs=[input_layer], outputs=self.call(input_layer, None, True))
     # end build_graph
-
+    # (x, encoder_output=None, lookahead_mask, padding_mask=None, training, lock)
     def call(self, x, encoder_output, lookahead_mask, padding_mask, training, lock=False):
+        print('input - x', reduce_any(is_nan(x)))
+        print('lookahead_mask: ', reduce_any(is_nan(lookahead_mask)))
         multihead_output1 = self.multihead_attention1(x, x, x, lookahead_mask) # (batch_size, seq_length, d_model)
+        print('multihead_output1: ', reduce_any(is_nan(multihead_output1)))
         multihead_output1 = self.dropout1(multihead_output1, training=training)
         addnorm_output1 = self.add_norm1(x, multihead_output1)
         multihead_output2 = self.multihead_attention2(addnorm_output1, encoder_output, encoder_output, padding_mask, lock)
@@ -171,7 +175,7 @@ class LockingDecoder(Layer):
         self.dropout = Dropout(rate)
         self.decoder_layer = [LockingDecoderLayer(sequence_length, h, d_k, d_v, d_model, d_ff, rate) for _ in range(n)]
     # end init
-
+    # (decoder_input, encoder_output=None, dec_in_lookahead_mask, enc_padding_mask=None, training, lock)
     def call(self, output_target, encoder_output, lookahead_mask, padding_mask, training, lock=False):
         pos_encoding_output = self.pos_encoding(output_target) # (num_sentences, seq_length, d_model)
         x = self.dropout(pos_encoding_output, training=training)

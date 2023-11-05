@@ -9,12 +9,12 @@ from datatools.text_pretraining import GPTWikipediaDataset
 from time import time
 
 # Define the model parameters
-h = 8  # Number of self-attention heads
+h = 1  # Number of self-attention heads
 d_k = 64  # Dimensionality of the linearly projected queries and keys
 d_v = 64  # Dimensionality of the linearly projected values
 d_model = 512  # Dimensionality of model layers' outputs
 d_ff = 2048  # Dimensionality of the inner fully connected layer
-n = 6  # Number of layers in the encoder stack
+n = 2  # Number of layers in the encoder stack
 
 # Define the training parameters
 epochs = 30
@@ -90,7 +90,7 @@ ckpt = train.Checkpoint(model=training_model, optimizer=optimizer)
 ckpt_manager = train.CheckpointManager(ckpt, "./checkpoints", max_to_keep=3)
 
 # speeding up the training process with eager execution of the training step
-@function
+# @function
 def train_step(train_X, train_Y, padding_token):
     with GradientTape() as tape:
         # run prediction
