@@ -7,11 +7,13 @@ from keras.losses import sparse_categorical_crossentropy
 from transformer.models import GPTDecoderWrapper, LockingDecoderModel
 from datatools.text_pretraining import GPTWikipediaDataset
 from time import time
+from tensorflow.math import is_nan, reduce_any, reduce_max, reduce_min
+import pickle
 
 # Define the model parameters
 h = 1  # Number of self-attention heads
-d_k = 64  # Dimensionality of the linearly projected queries and keys
-d_v = 64  # Dimensionality of the linearly projected values
+d_k = 256  # Dimensionality of the linearly projected queries and keys
+d_v = 256  # Dimensionality of the linearly projected values
 d_model = 512  # Dimensionality of model layers' outputs
 d_ff = 2048  # Dimensionality of the inner fully connected layer
 n = 2  # Number of layers in the encoder stack

@@ -3,6 +3,7 @@
 from tensorflow import matmul, reshape, shape, transpose, math, cast, float32, zeros
 from tensorflow.keras.layers import Layer, Dense
 from keras.backend import softmax
+# from tensorflow.math import is_nan, reduce_any
 
 class DotProductAttention(Layer):
     def __init__(self, **kwargs):

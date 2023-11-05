@@ -21,7 +21,7 @@ import numpy as np
 class MLMWikipediaDataset:
     def __init__(self,**kwargs):
         super(MLMWikipediaDataset, self).__init__(**kwargs)
-        self.n_sentences = 100
+        self.n_sentences = 10000
         self.train_split = 0.9
         self.max_sentence_length = 50
     # end init
@@ -85,7 +85,7 @@ class MLMWikipediaDataset:
         train = dataset[:int(self.n_sentences * self.train_split)]
         # Prepare tokenizer for the encoder input
         enc_seq_length = self.max_sentence_length
-        enc_vocab_size = self.tokenizer.vocab_size
+        enc_vocab_size = self.tokenizer.vocab_size + 1
         trainX, trainY, mask_weights = self.get_masked_input_and_labels(train)
         
         return trainX, trainY, mask_weights, train, enc_seq_length, enc_vocab_size
@@ -95,7 +95,7 @@ class MLMWikipediaDataset:
 class GPTWikipediaDataset:
     def __init__(self,**kwargs):
         super(GPTWikipediaDataset, self).__init__(**kwargs)
-        self.n_sentences = 100
+        self.n_sentences = 100000
         self.train_split = 0.9
         self.max_sentence_length = 50
     # end init
@@ -133,7 +133,7 @@ class GPTWikipediaDataset:
         train = dataset[:int(self.n_sentences * self.train_split)]
         # Prepare tokenizer for the encoder input
         dec_seq_length = self.max_sentence_length
-        dec_vocab_size = self.tokenizer.vocab_size
+        dec_vocab_size = self.tokenizer.vocab_size + 1
         padding_token = self.tokenizer.pad_token_id
         trainX, trainY = self.get_word_shift_input_output(train)
         
