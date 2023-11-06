@@ -7,17 +7,18 @@ from keras.losses import sparse_categorical_crossentropy
 from transformer.models import GPTDecoderWrapper, LockingDecoderModel
 from datatools.text_pretraining import GPTWikipediaDataset
 from time import time
+# from tqdm import tqdm # TODO: figure out how to use properly
 
 # Define the model parameters
 h = 8  # Number of self-attention heads
-d_k = 64  # Dimensionality of the linearly projected queries and keys
-d_v = 64  # Dimensionality of the linearly projected values
+d_k = 256  # Dimensionality of the linearly projected queries and keys
+d_v = 256  # Dimensionality of the linearly projected values
 d_model = 512  # Dimensionality of model layers' outputs
 d_ff = 2048  # Dimensionality of the inner fully connected layer
 n = 6  # Number of layers in the encoder stack
 
 # Define the training parameters
-epochs = 30
+epochs = 1000
 batch_size = 16
 beta_1 = 0.9
 beta_2 = 0.98
